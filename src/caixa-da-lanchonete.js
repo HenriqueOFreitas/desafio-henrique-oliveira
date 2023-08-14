@@ -1,4 +1,3 @@
-
 class CaixaDaLanchonete {
 
     //Método construtor da classe CaixaDaLanchonete
@@ -18,65 +17,89 @@ class CaixaDaLanchonete {
         };
     }
 
-    calcularValorDaCompra(metodoDePagamento, itens) {
-        if (itens.length == 0) {
-            return "Não há itens no carrinho de compra!";
-        }
-
-        //foreach
-        for(const item of itens) {
-            //Desestruturação do array retornado pelo método split()
-            const[produto, quantidade] = item.split(',');
-            if(quantidade == 0) {
-                return "Quantidade inválida!";
-            }
-            
-            if(this.cardapio.hasOwnProperty(produto)) {
-                this.carrinho.push(produto);
-                this.totalDaCompra += this.cardapio[produto] * quantidade;
-                switch (produto) {
-                    case 'chantily':
-                        if(!this.carrinho.includes('cafe')){
-                            return "Item extra não pode ser pedido sem o principal";
-                        }
-                        break;
-                    case 'queijo':
-                        if(!this.carrinho.includes('sanduiche')){
-                            return "Item extra não pode ser pedido sem o principal";
-                        }
-                        break;
-                    default:
-                        break;
-                }
-            } else {
-                return "Item inválido!";
-            }
-        }
-
+    validarMetodoDePagamento(metodoDePagamento) {
         const metodoDePagamentoMinusculo = metodoDePagamento.toLowerCase();
         switch (metodoDePagamentoMinusculo) {
             case 'dinheiro':
                 //desconto de 5% em compras no dinheiro
                 this.totalDaCompra = this.totalDaCompra - ((this.totalDaCompra * 5) / 100);
-                break;
+                return 1;
             case 'credito':
-
                 this.totalDaCompra = this.totalDaCompra + ((this.totalDaCompra * 3) / 100);
-                break;
+                return 1;
             case 'debito':
-                break
+                return 1;
             default:
-                return "Forma de pagamento inválida!";
+                return 0;
         }
+    }
 
+    formatadorDePreco() {
         //objeto com as opções de formatação que serão usadas pelo método toLocaleString()
         const formatacao = { style: 'decimal', minimumFractionDigits: 2, maximumFractionDigits: 2 };
 
         // toLocaleString para formatar, por exemplo, um valor de "3.50" para "3,50"
         const precoFormatado = this.totalDaCompra.toLocaleString('pt-BR', formatacao);
-        return "R$ " + precoFormatado;
+        
+        return ("R$ " + precoFormatado);
     }
 
+    validarProdutoDoCardapio(produto, quantidade) {
+        if(this.cardapio.hasOwnProperty(produto)) {
+            this.carrinho.push(produto);
+            this.totalDaCompra += this.cardapio[produto] * quantidade;
+            switch (produto) {
+                case 'chantily':
+                    if(!this.carrinho.includes('cafe')){
+                        throw "Item extra não pode ser pedido sem o principal";
+                    }
+                    break;
+                case 'queijo':
+                    if(!this.carrinho.includes('sanduiche')){
+                        throw "Item extra não pode ser pedido sem o principal";
+                    }
+                    break;
+                default:
+                    break;
+            }
+        } else {
+            throw "Item inválido!";
+        }
+    }
+
+    validarQuantidadeDoProduto(quantidade) {
+        if(quantidade == 0) {
+            throw "Quantidade inválida!";
+        }
+        if(quantidade == null) {
+            throw "Item inválido!";
+        }
+    }
+
+    calcularValorDaCompra(metodoDePagamento, itens) {
+        if (itens.length == 0) {
+            return "Não há itens no carrinho de compra!";
+        }
+
+        for(const item of itens) {
+            //Desestruturação do array retornado pelo método split()
+            const[produto, quantidade] = item.split(',');            
+
+            try {
+                this.validarQuantidadeDoProduto(quantidade);
+                this.validarProdutoDoCardapio(produto, quantidade);
+            } catch (error) {
+                return error;
+            }
+        }
+
+        //Caso o método de pagamento não seja válido
+        if(!this.validarMetodoDePagamento(metodoDePagamento)) {
+            return "Forma de pagamento inválida!";
+        }
+        
+        return this.formatadorDePreco();
+    }
 }
 
 export { CaixaDaLanchonete };
